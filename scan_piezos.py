@@ -4,34 +4,25 @@ import pandas as pd
 import time
 
 from AH2550A import AH2550A
-from MDT693B import MDT693B
+from AbsorberAttractorAssembly import *
 
+micron_per_cm = 1e6/1e2
 cap_to_sep = lambda c: 50*140/c  # very rough --> get real numbers from Albert
 
 piezo_controller_port = 'COM3'
 bridge_resource_name = 'GPIB0::28::INSTR'
 
-volts_per_micron = 150.0/1150  # using available stroke of piezo
-micron_per_cm = 1e6/1e2
-two_piezo_distance_cm = 9.128  # from SW model
-
-piezo_controller = MDT693B(piezo_controller_port)
-#piezo_controller.set_all_voltage(75)
+AAA = AbsorberAttractorAssembly(piezo_controller_port)
 
 bridge = AH2550A(bridge_resource_name, timeout=1e4)
 c, l, v = bridge.single_measurement()
 
-#c = 100.  # pF
 initial_separation = cap_to_sep(c)
 
 test_angle_max = 6*np.arcsin((initial_separation)/(two_piezo_distance_cm*micron_per_cm/2))  # keep plates from crashing
 
 angles_to_try = np.linspace(-test_angle_max, test_angle_max, 11)
 
-matrices = dict(
-	theta =  -1 * np.sqrt(3)/4 * two_piezo_distance_cm * micron_per_cm * np.array([1.0, -0.5, -0.5]),
-	phi = two_piezo_distance_cm * micron_per_cm * np.array([0., -0.5, 0.5])
-)
 
 samples_per_angle = 2
 
@@ -43,16 +34,11 @@ dfs = {}
 start_voltages = piezo_controller.get_voltages()
 #for axis in ('phi',):
 for axis in ('theta', 'phi'):
-	matrix = matrices[axis]
 	outdata = []
 	for angle in angles_to_try:
-		distance_adjustment = matrix * np.sin(angle)
-		voltage_adjustments = -1 * matrix * np.sin(angle) * volts_per_micron
-		voltages = start_voltages + voltage_adjustments
-		_ = piezo_controller.set_voltages(voltages)
-		time.sleep(0.1)
-		assert (_==[1,1,1]),"voltage setting failed"
 		for trial in range(samples_per_angle):
+            AAA.rotate(angle, axis, start_voltages)
+            time.sleep(0.1)
 			c, l, v = bridge.single_measurement()
 			data_str = f'{voltages}\t{angle}\t{c}\t{l}\t{v}\n'
 			print(data_str)
