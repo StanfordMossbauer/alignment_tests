@@ -11,10 +11,10 @@ sleep_time = 0.1
 
 print('C [pF]\tS [um]\tLoss [nS]\tdV [V]')
 while 1:
-	meas = bridge.single_measurement()
-	try:
-		c, l, v = meas
-		print('%.2f\t%.2f\t%.3f\t\t%.2f' % (c, 50*140/c, l, v))
-	except:
-		pass
-	time.sleep(sleep_time)
+    try:
+        c, l, v = bridge.single_measurement(max_attempts=5, verbose=True)
+        print('%.2f\t%.2f\t%.3f\t\t%.2f' % (c, 50*140/c, l, v))
+    except IndexError as e:
+        print(e)
+        pass
+    time.sleep(sleep_time)
