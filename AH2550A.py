@@ -61,7 +61,7 @@ class AH2550A:
         l = np.zeros(n)
         v = np.zeros(n)
         for j in range(n):
-            c[j], l[j], v[j] = bridge.single_measurement(max_attempts=max_attempts, verbose=verbose) 
+            c[j], l[j], v[j] = self.single_measurement(max_attempts=max_attempts, verbose=verbose) 
         return c, l, v
     
     def __del__(self):
